@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydrateMe - Your Daily Water Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Onboarding Overlay (initially shown) -->
+        <div class="onboarding-overlay" id="onboardingOverlay">
+            <div class="onboarding-content">
+                <h1>Welcome to HydrateMe! 💧</h1>
+                <p>Let's set up your daily water intake goal.</p>
+                
+                <div class="form-group">
+                    <label for="userName">Your Name</label>
+                    <input type="text" id="userName" placeholder="Enter your name" class="input-field">
+                </div>
+                
+                <div class="form-group">
+                    <label for="dailyGoal">Daily Water Goal (ml)</label>
+                    <input type="number" id="dailyGoal" value="2000" min="500" max="10000" step="100" class="input-field">
+                </div>
+                
+                <button id="startTracking" class="btn btn-primary">Start Tracking</button>
+            </div>
+        </div>
+
+        <!-- Main App (initially hidden) -->
+        <div class="main-app" style="display: none;">
+            <header class="app-header">
+                <div class="header-content">
+                    <h1>HydrateMe</h1>
+                    <button id="settingsBtn" class="icon-btn"><i class="fas fa-cog"></i></button>
+                </div>
+                <div class="greeting" id="greeting">Hello, User!</div>
+            </header>
+
+            <main class="dashboard">
+                <!-- Progress Ring -->
+                <div class="progress-container">
+                    <div class="progress-ring">
+                        <svg class="progress-ring__circle" width="200" height="200" viewBox="0 0 200 200">
+                            <circle class="progress-ring__circle-bg" cx="100" cy="100" r="90" />
+                            <circle class="progress-ring__circle-fill" cx="100" cy="100" r="90" />
+                        </svg>
+                        <div class="progress-text">
+                            <span id="progressAmount">0</span>
+                            <span>ml</span>
+                            <div class="progress-goal">of <span id="goalAmount">2000</span> ml</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Add Buttons -->
+                <div class="quick-add">
+                    <button class="add-btn" data-amount="250">+250ml</button>
+                    <button class="add-btn" data-amount="500">+500ml</button>
+                    <button class="add-btn" data-amount="750">+750ml</button>
+                </div>
+
+                <!-- Daily Stats -->
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <i class="fas fa-tint"></i>
+                        <div class="stat-value" id="remainingAmount">2000</div>
+                        <div class="stat-label">Remaining</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-percentage"></i>
+                        <div class="stat-value" id="percentageComplete">0</div>
+                        <div class="stat-label">Complete</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-fire"></i>
+                        <div class="stat-value" id="streakCount">0</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="recent-activity">
+                    <h2>Today's Intake</h2>
+                    <div class="intake-list" id="intakeList">
+                        <!-- Intake items will be added here dynamically -->
+                        <div class="empty-state">No water logged yet today. Stay hydrated!</div>
+                    </div>
+                </div>
+
+                <!-- Hydration Tip -->
+                <div class="tip-card">
+                    <div class="tip-icon">💡</div>
+                    <div class="tip-content">
+                        <h3>Did You Know?</h3>
+                        <p id="hydrationTip">Drinking water helps maintain the balance of body fluids and supports digestion.</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <button class="nav-btn active" data-view="home">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </button>
+                <button class="nav-btn" data-view="history">
+                    <i class="fas fa-chart-line"></i>
+                    <span>History</span>
+                </button>
+                <button class="nav-btn" data-view="achievements">
+                    <i class="fas fa-trophy"></i>
+                    <span>Achievements</span>
+                </button>
+                <button class="nav-btn" data-view="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
