@@ -42,7 +42,8 @@
                 <div class="greeting" id="greeting">Hello, User!</div>
             </header>
 
-            <main class="dashboard">
+            <!-- Home View -->
+            <main class="view dashboard" id="homeView">
                 <!-- Progress Ring -->
                 <div class="progress-container">
                     <div class="progress-ring">
@@ -103,6 +104,134 @@
                 </div>
             </main>
 
+            <!-- History View -->
+            <main class="view" id="historyView" style="display: none;">
+                <div class="view-header">
+                    <h2><i class="fas fa-history"></i> Hydration History</h2>
+                </div>
+                <div class="history-filters">
+                    <button class="filter-btn active" data-period="week">This Week</button>
+                    <button class="filter-btn" data-period="month">This Month</button>
+                    <button class="filter-btn" data-period="all">All Time</button>
+                </div>
+                <div class="history-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-tint"></i>
+                        <div class="stat-value" id="weeklyAverage">0</div>
+                        <div class="stat-label">Weekly Avg</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-calendar-check"></i>
+                        <div class="stat-value" id="goalDays">0</div>
+                        <div class="stat-label">Goal Days</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-glass-whiskey"></i>
+                        <div class="stat-value" id="totalIntake">0L</div>
+                        <div class="stat-label">Total Water</div>
+                    </div>
+                </div>
+                <div class="history-chart-container">
+                    <h3>Weekly Overview</h3>
+                    <canvas id="historyChart"></canvas>
+                </div>
+                <div class="recent-days" id="recentDaysList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </main>
+
+            <!-- Achievements View -->
+            <main class="view" id="achievementsView" style="display: none;">
+                <div class="view-header">
+                    <h2><i class="fas fa-trophy"></i> Achievements</h2>
+                </div>
+                <div class="achievements-stats">
+                    <div class="achievement-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="achievementProgress"></div>
+                        </div>
+                        <div class="progress-text" id="achievementCount">0/12 Achievements</div>
+                    </div>
+                </div>
+                <div class="achievements-grid" id="achievementsGrid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </main>
+
+            <!-- Profile View -->
+            <main class="view" id="profileView" style="display: none;">
+                <div class="view-header">
+                    <h2><i class="fas fa-user"></i> My Profile</h2>
+                </div>
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <div class="avatar-initials" id="avatarInitials">U</div>
+                        <div class="profile-level">
+                            <div class="level-circle">
+                                <span id="userLevel">1</span>
+                            </div>
+                            <div class="level-text">Level</div>
+                        </div>
+                    </div>
+                    <div class="profile-info">
+                        <h3 id="profileName">User</h3>
+                        <p class="member-since">Member since <span id="memberSince">Today</span></p>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <div class="stat-value" id="currentStreak">0</div>
+                            <div class="stat-label">Day Streak</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="totalDaysTracked">1</div>
+                            <div class="stat-label">Days Tracked</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="totalWater">0L</div>
+                            <div class="stat-label">Total Water</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-section">
+                    <h3>Daily Goal</h3>
+                    <div class="goal-setting">
+                        <input type="range" id="goalSlider" min="1000" max="5000" step="100" value="2000">
+                        <div class="goal-display">
+                            <span id="currentGoal">2000</span> ml
+                            <button id="saveGoalBtn" class="btn btn-small">Save</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-section">
+                    <h3>Preferences</h3>
+                    <div class="preference-item">
+                        <label class="switch">
+                            <input type="checkbox" id="darkModeToggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="preference-label">Dark Mode</span>
+                    </div>
+                    <div class="preference-item">
+                        <label class="switch">
+                            <input type="checkbox" id="reminderToggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="preference-label">Daily Reminders</span>
+                    </div>
+                </div>
+                
+                <div class="profile-actions">
+                    <button id="exportDataBtn" class="btn btn-outline">
+                        <i class="fas fa-file-export"></i> Export Data
+                    </button>
+                    <button id="resetDataBtn" class="btn btn-outline btn-danger">
+                        <i class="fas fa-trash-alt"></i> Reset Data
+                    </button>
+                </div>
+            </main>
+
             <!-- Bottom Navigation -->
             <nav class="bottom-nav">
                 <button class="nav-btn active" data-view="home">
@@ -122,6 +251,84 @@
                     <span>Profile</span>
                 </button>
             </nav>
+            
+            <!-- Settings Modal -->
+            <div class="modal" id="settingsModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Settings</h3>
+                        <button class="close-btn" id="closeSettings">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="setting-group">
+                            <h4>Appearance</h4>
+                            <div class="setting-item">
+                                <label>Theme</label>
+                                <select id="themeSelect" class="input-field">
+                                    <option value="auto">Auto (System)</option>
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <h4>Notifications</h4>
+                            <div class="setting-item">
+                                <label class="switch">
+                                    <input type="checkbox" id="notificationsToggle" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span>Enable Notifications</span>
+                            </div>
+                            <div class="setting-item">
+                                <label>Reminder Frequency</label>
+                                <select id="reminderFrequency" class="input-field">
+                                    <option value="60">Every Hour</option>
+                                    <option value="120">Every 2 Hours</option>
+                                    <option value="180">Every 3 Hours</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <h4>Units</h4>
+                            <div class="setting-item">
+                                <label class="radio-container">
+                                    <input type="radio" name="unit" value="ml" checked>
+                                    <span class="checkmark"></span>
+                                    Milliliters (ml)
+                                </label>
+                                <label class="radio-container">
+                                    <input type="radio" name="unit" value="oz">
+                                    <span class="checkmark"></span>
+                                    Fluid Ounces (oz)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" id="saveSettings">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Confirmation Modal -->
+            <div class="modal" id="confirmModal">
+                <div class="modal-content small">
+                    <div class="modal-header">
+                        <h3 id="confirmTitle">Are you sure?</h3>
+                        <button class="close-btn" id="closeConfirm">&times;</button>
+                    </div>
+                    <div class="modal-body" id="confirmMessage">
+                        This action cannot be undone.
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" id="cancelConfirm">Cancel</button>
+                        <button class="btn btn-danger" id="confirmAction">Confirm</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
