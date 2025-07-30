@@ -1,471 +1,344 @@
-// DOM Elements
-const onboardingOverlay = document.getElementById('onboardingOverlay');
-const startTrackingBtn = document.getElementById('startTracking');
-const mainApp = document.querySelector('.main-app');
-const progressRing = document.querySelector('.progress-ring__circle-fill');
-const progressAmount = document.getElementById('progressAmount');
-const goalAmount = document.getElementById('goalAmount');
-const remainingAmount = document.getElementById('remainingAmount');
-const percentageComplete = document.getElementById('percentageComplete');
-const streakCount = document.getElementById('streakCount');
-const intakeList = document.getElementById('intakeList');
-const hydrationTip = document.getElementById('hydrationTip');
-const quickAddButtons = document.querySelectorAll('.add-btn');
-const navButtons = document.querySelectorAll('.nav-btn');
-const settingsBtn = document.getElementById('settingsBtn');
-const greeting = document.getElementById('greeting');
+// HydrateMe Rebuilt JavaScript
+(function () {
+  // ====== DOM Elements ======
+  const onboarding = document.getElementById('onboarding');
+  const onboardingForm = document.getElementById('onboardingForm');
+  const greeting = document.getElementById('greeting');
+  const streakIcon = document.getElementById('streakIcon');
+  const streakText = document.getElementById('streakText');
+  const motivation = document.getElementById('motivation');
+  const progressBar = document.querySelector('.progress-bar');
+  const progressLabel = document.getElementById('currentIntake');
+  const goalLabel = document.getElementById('goalIntake');
+  const glassesContainer = document.getElementById('glasses');
+  const quickAdd = document.querySelectorAll('.quick-add button');
+  const remaining = document.getElementById('remaining');
+  const achievement = document.getElementById('achievement');
+  const tipText = document.getElementById('tipText');
+  const weekChartCanvas = document.getElementById('weekChart');
+  const confettiDiv = document.getElementById('confetti');
+  const badgeModal = document.getElementById('badgeModal');
+  const badgeIcon = document.getElementById('badgeIcon');
+  const badgeText = document.getElementById('badgeText');
+  const closeBadge = document.getElementById('closeBadge');
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const root = document.documentElement;
 
-// State
-let state = {
-    userName: '',
-    dailyGoal: 2000, // Default goal in ml
-    currentIntake: 0,
-    intakeHistory: [],
+  // ====== Hydration Tips & Motivations ======
+  const hydrationTips = [
+    "Dehydration can lower brain performance by 10%.",
+    "Drinking water helps your skin stay healthy and radiant.",
+    "Water supports digestion and metabolism.",
+    "Staying hydrated boosts your energy naturally.",
+    "Hydration helps regulate body temperature.",
+    "Water cushions joints and protects organs.",
+    "Even mild dehydration can make you feel tired.",
+    "Drinking water before meals can help control appetite.",
+    "Hydration is key to focus and productivity.",
+    "Water makes up 60% of your body weight!"
+  ];
+  const motivations = [
+    "Keep going! Every sip counts.",
+    "You're building a healthy habit.",
+    "Hydration is self-care.",
+    "Small steps, big results!",
+    "Your body thanks you!",
+    "Stay refreshed, stay awesome.",
+    "You're a hydration hero!"
+  ];
+  // ====== Achievements ======
+  const BADGES = [
+    { name: "Hydration Newbie", icon: "🥤", condition: s => s.totalDays === 1 },
+    { name: "7-Day Streak", icon: "🔥", condition: s => s.streak >= 7 },
+    { name: "Weekend Warrior", icon: "🏅", condition: s => s.weekends >= 2 },
+    { name: "Goal Crusher", icon: "💪", condition: s => s.maxIntake >= 3000 },
+    { name: "Hydration Master", icon: "💧", condition: s => s.streak >= 21 },
+  ];
+
+  // ====== State ======
+  let state = {
+    name: '',
+    age: '',
+    weight: '',
+    activity: 'sedentary',
+    climate: 'temperate',
+    goal: 2000,
+    intake: 0,
+    glasses: [], // array of {amount, time}
     streak: 0,
-    lastUpdated: null
-};
+    lastDate: '',
+    history: [], // array of {date, intake}
+    totalDays: 0,
+    weekends: 0,
+    maxIntake: 0,
+    unlockedBadges: [],
+  };
 
-// Hydration Tips
-const hydrationTips = [
-    "Drinking water helps maintain the balance of body fluids.",
-    "Water helps energize muscles and keeps them from getting tired.",
-    "Drinking water can help control calories and support weight management.",
-    "Water helps your kidneys remove waste from your blood.",
-    "Even mild dehydration can drain your energy and make you tired.",
-    "Drinking water can improve your skin's appearance.",
-    "Water helps maintain normal bowel function and prevent constipation.",
-    "Staying hydrated helps maintain proper brain function.",
-    "Drinking water before meals can help reduce appetite.",
-    "Water helps regulate body temperature."
-];
-
-// Initialize the app
-function initApp() {
-    loadState();
-    setupEventListeners();
-    updateUI();
-    showRandomTip();
-    checkForNewDay();
-}
-
-// Load state from localStorage
-function loadState() {
-    const savedState = localStorage.getItem('hydrateMeState');
-    if (savedState) {
-        try {
-            const parsedState = JSON.parse(savedState);
-            state = { ...state, ...parsedState };
-            
-            // If it's a new day, reset current intake but keep the history
-            if (!isSameDay(new Date(parsedState.lastUpdated), new Date())) {
-                state.currentIntake = 0;
-                state.lastUpdated = new Date().toISOString();
-                saveState();
-            }
-        } catch (e) {
-            console.error('Failed to load state:', e);
-        }
-    } else {
-        // Show onboarding for new users
-        showOnboarding();
+  // ====== Persistence ======
+  function saveState() {
+    localStorage.setItem('hydrateMe', JSON.stringify(state));
+  }
+  function loadState() {
+    const data = localStorage.getItem('hydrateMe');
+    if (data) {
+      Object.assign(state, JSON.parse(data));
     }
-}
+  }
 
-// Save state to localStorage
-function saveState() {
-    state.lastUpdated = new Date().toISOString();
-    localStorage.setItem('hydrateMeState', JSON.stringify(state));
-}
-
-// Check if it's a new day
-function isSameDay(date1, date2) {
-    if (!date1 || !date2) return false;
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-    return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
-}
-
-// Check for new day and update streak
-function checkForNewDay() {
-    if (!state.lastUpdated) return;
-    
-    const lastUpdated = new Date(state.lastUpdated);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    // If last update was yesterday and goal was met, increment streak
-    if (isSameDay(lastUpdated, yesterday) && state.currentIntake >= state.dailyGoal) {
-        state.streak++;
-        saveState();
-    } 
-    // If last update was before yesterday, reset streak
-    else if (!isSameDay(lastUpdated, today) && !isSameDay(lastUpdated, yesterday)) {
-        state.streak = 0;
-        saveState();
-    }
-}
-
-// Show onboarding screen
-function showOnboarding() {
-    onboardingOverlay.style.display = 'flex';
-    mainApp.style.display = 'none';
-}
-
-// Hide onboarding and initialize app
-function completeOnboarding() {
-    const userName = document.getElementById('userName').value.trim() || 'Hydration Hero';
-    const dailyGoal = parseInt(document.getElementById('dailyGoal').value) || 2000;
-    
-    state.userName = userName;
-    state.dailyGoal = dailyGoal;
-    state.currentIntake = 0;
-    state.lastUpdated = new Date().toISOString();
-    
-    saveState();
-    updateUI();
-    onboardingOverlay.style.display = 'none';
-    mainApp.style.display = 'block';
-    
-    // Show welcome message
-    showNotification(`Welcome, ${userName}! Let's stay hydrated!`);
-}
-
-// Update the UI based on current state
-function updateUI() {
-    // Update progress ring
-    const circumference = 565.48; // 2 * π * r (r = 90)
-    const progress = Math.min(state.currentIntake / state.dailyGoal, 1);
-    const offset = circumference - (progress * circumference);
-    
-    progressRing.style.strokeDashoffset = offset;
-    
-    // Update text displays
-    progressAmount.textContent = state.currentIntake;
-    goalAmount.textContent = state.dailyGoal;
-    remainingAmount.textContent = Math.max(0, state.dailyGoal - state.currentIntake);
-    percentageComplete.textContent = Math.round(progress * 100);
-    streakCount.textContent = state.streak;
-    
-    // Update greeting
-    greeting.textContent = getTimeBasedGreeting();
-    
-    // Update intake history list
-    updateIntakeList();
-    
-    // Update progress ring color based on progress
-    updateProgressRingColor(progress);
-}
-
-// Update progress ring color based on progress
-function updateProgressRingColor(progress) {
-    if (progress >= 1) {
-        progressRing.style.stroke = '#50c878'; // Green when goal is met
-    } else if (progress >= 0.75) {
-        progressRing.style.stroke = '#4a90e2'; // Blue when close to goal
-    } else if (progress >= 0.5) {
-        progressRing.style.stroke = '#50c1e9'; // Light blue
-    } else if (progress >= 0.25) {
-        progressRing.style.stroke = '#6c5ce7'; // Purple
-    } else {
-        progressRing.style.stroke = '#ff7675'; // Red when low
-    }
-}
-
-// Get time-based greeting
-function getTimeBasedGreeting() {
-    const hour = new Date().getHours();
-    if (hour < 12) return `Good morning, ${state.userName || 'there'}!`;
-    if (hour < 18) return `Good afternoon, ${state.userName || 'there'}!`;
-    return `Good evening, ${state.userName || 'there'}!`;
-}
-
-// Update the intake history list
-function updateIntakeList() {
-    if (!state.intakeHistory || state.intakeHistory.length === 0) {
-        intakeList.innerHTML = '<div class="empty-state">No water logged yet today. Stay hydrated!</div>';
-        return;
-    }
-    
-    // Filter today's intakes
-    const today = new Date().toDateString();
-    const todayIntakes = state.intakeHistory.filter(entry => {
-        return new Date(entry.timestamp).toDateString() === today;
+  // ====== Onboarding & Recommendations ======
+  function recommendGoal(age, weight, activity, climate) {
+    let base = weight * 30; // 30ml per kg
+    if (activity === 'moderate') base += 300;
+    if (activity === 'active') base += 600;
+    if (climate === 'hot') base += 400;
+    if (climate === 'cold') base -= 200;
+    return Math.round(Math.max(1200, base));
+  }
+  function showOnboarding() {
+    onboarding.style.display = 'flex';
+  }
+  function hideOnboarding() {
+    onboarding.style.display = 'none';
+  }
+  onboardingForm.onsubmit = function (e) {
+    e.preventDefault();
+    const name = onboardingForm.name.value.trim() || 'Hydration Hero';
+    const age = parseInt(onboardingForm.age.value) || 25;
+    const weight = parseInt(onboardingForm.weight.value) || 60;
+    const activity = onboardingForm.activity.value;
+    const climate = onboardingForm.climate.value;
+    const goal = recommendGoal(age, weight, activity, climate);
+    Object.assign(state, {
+      name, age, weight, activity, climate,
+      goal, intake: 0, glasses: [], streak: state.streak || 0, lastDate: todayStr(),
     });
-    
-    if (todayIntakes.length === 0) {
-        intakeList.innerHTML = '<div class="empty-state">No water logged yet today. Stay hydrated!</div>';
-        return;
-    }
-    
-    // Sort by most recent first
-    todayIntakes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    // Generate list items
-    intakeList.innerHTML = todayIntakes.map(entry => {
-        const time = new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return `
-            <div class="intake-item">
-                <span class="intake-amount">+${entry.amount} ml</span>
-                <span class="intake-time">${time}</span>
-            </div>
-        `;
-    }).join('');
-}
-
-// Add water intake
-function addWater(amount) {
-    // Add to current intake
-    state.currentIntake += amount;
-    
-    // Add to history
-    state.intakeHistory.push({
-        amount,
-        timestamp: new Date().toISOString()
-    });
-    
-    // Check if goal is reached
-    if (state.currentIntake >= state.dailyGoal && state.currentIntake - amount < state.dailyGoal) {
-        showAchievement('Daily Goal Achieved!', 'You\'ve reached your daily water intake goal!');
-        
-        // Check for streak
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        
-        if (state.lastUpdated && isSameDay(new Date(state.lastUpdated), yesterday)) {
-            state.streak++;
-            showAchievement('Streak!', `You're on a ${state.streak}-day streak!`);
-        } else if (!state.lastUpdated || !isSameDay(new Date(state.lastUpdated), new Date())) {
-            state.streak = 1;
-            showAchievement('First Day!', 'Great start to your hydration journey!');
-        }
-    }
-    
-    // Save and update UI
+    if (!state.history) state.history = [];
     saveState();
-    updateUI();
-    
-    // Show success animation
-    showWaterDropAnimation(amount);
-}
+    hideOnboarding();
+    renderAll();
+    showNotification(`Welcome, ${name}! Your recommended goal is ${goal} ml/day.`);
+  };
 
-// Show water drop animation
-function showWaterDropAnimation(amount) {
-    const drop = document.createElement('div');
-    drop.className = 'water-drop';
-    drop.textContent = `+${amount}ml`;
-    
-    // Random position near the progress ring
-    const ring = document.querySelector('.progress-ring');
-    const ringRect = ring.getBoundingClientRect();
-    const x = ringRect.left + (ringRect.width / 2) + (Math.random() * 60 - 30);
-    const y = ringRect.top + (ringRect.height / 2) + (Math.random() * 60 - 30);
-    
-    drop.style.left = `${x}px`;
-    drop.style.top = `${y}px`;
-    
-    document.body.appendChild(drop);
-    
-    // Animate
-    setTimeout(() => {
-        drop.style.transform = 'translateY(-100px) scale(1.5)';
-        drop.style.opacity = '0';
-    }, 10);
-    
-    // Remove after animation
-    setTimeout(() => {
-        drop.remove();
-    }, 1000);
-}
+  // ====== Utilities ======
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+  function isWeekend(dateStr) {
+    const d = new Date(dateStr);
+    return d.getDay() === 0 || d.getDay() === 6;
+  }
+  function randomFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
 
-// Show a random hydration tip
-function showRandomTip() {
-    const randomIndex = Math.floor(Math.random() * hydrationTips.length);
-    hydrationTip.textContent = hydrationTips[randomIndex];
-}
-
-// Show achievement notification
-function showAchievement(title, message) {
-    // In a real app, you might want to use a proper notification library
-    console.log(`Achievement: ${title} - ${message}`);
-    showNotification(`🏆 ${title}: ${message}`);
-    
-    // Show confetti effect
+  // ====== Hydration Tracking ======
+  function addIntake(amount) {
+    if (state.lastDate !== todayStr()) {
+      // New day: archive yesterday
+      if (state.intake > 0) {
+        state.history.push({ date: state.lastDate, intake: state.intake });
+        if (isWeekend(state.lastDate)) state.weekends = (state.weekends || 0) + 1;
+        state.totalDays = (state.totalDays || 0) + 1;
+        state.maxIntake = Math.max(state.maxIntake || 0, state.intake);
+      }
+      state.intake = 0;
+      state.glasses = [];
+      state.lastDate = todayStr();
+      // Streak logic
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toISOString().slice(0, 10);
+      const yHist = state.history.find(h => h.date === yStr);
+      if (yHist && yHist.intake >= state.goal) {
+        state.streak = (state.streak || 0) + 1;
+      } else {
+        state.streak = 1;
+      }
+    }
+    state.intake += amount;
+    state.glasses.push({ amount, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+    state.maxIntake = Math.max(state.maxIntake || 0, state.intake);
+    saveState();
+    renderAll();
     showConfetti();
-}
+    checkAchievements();
+  }
 
-// Show notification
-function showNotification(message) {
-    // In a real app, you might want to use a proper notification system
-    console.log(`Notification: ${message}`);
-    
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // Show with animation
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-    
-    // Hide after delay
-    setTimeout(() => {
-        notification.classList.remove('show');
-        
-        // Remove after animation
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
-}
-
-// Show confetti effect
-function showConfetti() {
-    const confettiCount = 100;
-    const container = document.createElement('div');
-    container.className = 'confetti-container';
-    
-    for (let i = 0; i < confettiCount; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = `${Math.random() * 100}%`;
-        confetti.style.animationDelay = `${Math.random() * 2}s`;
-        confetti.style.animationDuration = `${1 + Math.random() * 2}s`;
-        confetti.style.backgroundColor = getRandomColor();
-        container.appendChild(confetti);
+  // ====== Rendering ======
+  function renderAll() {
+    // Greeting
+    greeting.textContent = `Hello, ${state.name || 'friend'}!`;
+    streakText.textContent = `${state.streak || 0}-day streak`;
+    streakIcon.textContent = state.streak >= 7 ? '🏆' : '🔥';
+    motivation.textContent = randomFrom(motivations);
+    // Progress Ring
+    goalLabel.textContent = state.goal;
+    progressLabel.textContent = state.intake;
+    const percent = Math.min(1, state.intake / state.goal);
+    progressBar.style.strokeDashoffset = 439.82 * (1 - percent);
+    // Glasses
+    renderGlasses();
+    // Remaining
+    remaining.textContent = Math.max(0, state.goal - state.intake);
+    // Achievement
+    achievement.textContent = state.unlockedBadges && state.unlockedBadges.length > 0 ?
+      state.unlockedBadges[state.unlockedBadges.length - 1].name : '—';
+    // Tip
+    tipText.textContent = randomFrom(hydrationTips);
+    // Chart
+    renderChart();
+  }
+  function renderGlasses() {
+    // 8 glasses per goal
+    const glassSize = Math.round(state.goal / 8);
+    glassesContainer.innerHTML = '';
+    let filled = Math.floor(state.intake / glassSize);
+    for (let i = 0; i < 8; i++) {
+      const div = document.createElement('div');
+      div.className = 'glass' + (i < filled ? ' filled' : '');
+      div.innerHTML = `<span class="glass-amount">${glassSize}ml</span>`;
+      div.title = `Add ${glassSize}ml`;
+      div.onclick = () => { addIntake(glassSize); };
+      glassesContainer.appendChild(div);
     }
-    
-    document.body.appendChild(container);
-    
-    // Remove after animation
-    setTimeout(() => {
-        container.remove();
-    }, 3000);
-}
-
-// Get a random color for confetti
-function getRandomColor() {
-    const colors = ['#4a90e2', '#50c1e9', '#6c5ce7', '#a55eea', '#fd79a8', '#ff7675', '#fdcb6e', '#00b894'];
-    return colors[Math.floor(Math.random() * colors.length)];
-}
-
-// Set up event listeners
-function setupEventListeners() {
-    // Start tracking button
-    if (startTrackingBtn) {
-        startTrackingBtn.addEventListener('click', completeOnboarding);
+  }
+  function renderChart() {
+    if (!weekChartCanvas) return;
+    const ctx = weekChartCanvas.getContext('2d');
+    let labels = [];
+    let data = [];
+    let today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      let d = new Date(today);
+      d.setDate(d.getDate() - i);
+      let dStr = d.toISOString().slice(0, 10);
+      labels.push(d.toLocaleDateString(undefined, { weekday: 'short' }));
+      let h = state.history.find(h => h.date === dStr);
+      data.push(h ? h.intake : (dStr === state.lastDate ? state.intake : 0));
     }
-    
-    // Quick add buttons
-    quickAddButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const amount = parseInt(button.dataset.amount);
-            addWater(amount);
-        });
+    if (window._weekChart) window._weekChart.destroy();
+    window._weekChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'ml',
+          data,
+          backgroundColor: data.map(v => v >= state.goal ? '#50c878' : '#4a90e2'),
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { display: false, suggestedMax: state.goal * 1.2 },
+          x: { grid: { display: false } }
+        },
+        responsive: false,
+        animation: false,
+      }
     });
-    
-    // Navigation buttons
-    navButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            // Remove active class from all buttons
-            navButtons.forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
-            button.classList.add('active');
-            
-            // Handle view change (in a real app, you'd switch views here)
-            const view = button.dataset.view;
-            console.log(`Switching to ${view} view`);
-        });
-    });
-    
-    // Settings button
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            // In a real app, you'd show a settings modal here
-            showNotification('Settings will be available soon!');
-        });
-    }
-    
-    // Handle Enter key in input fields
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && onboardingOverlay.style.display === 'flex') {
-            completeOnboarding();
-        }
-    });
-}
+  }
 
-// Initialize the app when the DOM is loaded
-document.addEventListener('DOMContentLoaded', initApp);
+  // ====== Achievements ======
+  function checkAchievements() {
+    for (const badge of BADGES) {
+      if (!state.unlockedBadges) state.unlockedBadges = [];
+      if (state.unlockedBadges.find(b => b.name === badge.name)) continue;
+      if (badge.condition(state)) {
+        state.unlockedBadges.push({ name: badge.name, icon: badge.icon, date: todayStr() });
+        saveState();
+        showBadge(badge);
+      }
+    }
+  }
+  function showBadge(badge) {
+    badgeIcon.textContent = badge.icon;
+    badgeText.textContent = `Unlocked: ${badge.name}! 🎉`;
+    badgeModal.classList.add('active');
+  }
+  closeBadge.onclick = () => badgeModal.classList.remove('active');
 
-// Add some CSS for animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes dropIn {
-        0% { transform: translateY(-20px); opacity: 0; }
-        100% { transform: translateY(0); opacity: 1; }
+  // ====== Confetti ======
+  function showConfetti() {
+    confettiDiv.innerHTML = '';
+    for (let i = 0; i < 32; i++) {
+      const conf = document.createElement('div');
+      conf.style.position = 'absolute';
+      conf.style.left = (Math.random() * 100) + 'vw';
+      conf.style.top = '-20px';
+      conf.style.width = '12px';
+      conf.style.height = '12px';
+      conf.style.background = randomFrom(['#4a90e2', '#50c878', '#6c5ce7', '#fdcb6e', '#00b894', '#ff7675']);
+      conf.style.opacity = 0.7;
+      conf.style.borderRadius = '50%';
+      conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+      conf.style.transition = 'top 1.2s cubic-bezier(.4,0,.2,1), opacity 0.9s';
+      confettiDiv.appendChild(conf);
+      setTimeout(() => {
+        conf.style.top = '90vh';
+        conf.style.opacity = 0;
+      }, 10);
+      setTimeout(() => conf.remove(), 1400);
     }
-    
-    @keyframes floatUp {
-        0% { transform: translateY(0); opacity: 1; }
-        100% { transform: translateY(-100px); opacity: 0; }
+  }
+
+  // ====== Notifications ======
+  function showNotification(msg) {
+    const n = document.createElement('div');
+    n.textContent = msg;
+    n.style.position = 'fixed';
+    n.style.top = '24px';
+    n.style.left = '50%';
+    n.style.transform = 'translateX(-50%)';
+    n.style.background = 'rgba(34,43,69,0.97)';
+    n.style.color = '#fff';
+    n.style.padding = '14px 28px';
+    n.style.borderRadius = '32px';
+    n.style.fontSize = '1rem';
+    n.style.zIndex = 4000;
+    n.style.opacity = 0;
+    n.style.transition = 'opacity 0.3s';
+    document.body.appendChild(n);
+    setTimeout(() => n.style.opacity = 1, 50);
+    setTimeout(() => n.style.opacity = 0, 2000);
+    setTimeout(() => n.remove(), 2400);
+  }
+
+  // ====== Quick Add Buttons ======
+  quickAdd.forEach(btn => {
+    btn.onclick = () => addIntake(parseInt(btn.dataset.amount));
+  });
+
+  // ====== Dark Mode Toggle ======
+  darkModeToggle.onclick = () => {
+    if (root.getAttribute('data-theme') === 'dark') {
+      root.removeAttribute('data-theme');
+      localStorage.setItem('hydrateMe-theme', 'light');
+    } else {
+      root.setAttribute('data-theme', 'dark');
+      localStorage.setItem('hydrateMe-theme', 'dark');
     }
-    
-    @keyframes confettiFall {
-        0% { transform: translateY(-100vh) rotate(0deg); }
-        100% { transform: translateY(100vh) rotate(360deg); }
+  };
+  // On load, set theme
+  (function () {
+    const theme = localStorage.getItem('hydrateMe-theme');
+    if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+    else if (theme === 'light') root.removeAttribute('data-theme');
+    else if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.setAttribute('data-theme', 'dark');
+  })();
+
+  // ====== App Startup ======
+  function startup() {
+    loadState();
+    if (!state.name || !state.goal) {
+      showOnboarding();
+    } else {
+      hideOnboarding();
+      renderAll();
     }
-    
-    .water-drop {
-        position: fixed;
-        color: #4a90e2;
-        font-weight: bold;
-        font-size: 1rem;
-        pointer-events: none;
-        z-index: 1000;
-        animation: floatUp 1s ease-out forwards;
-    }
-    
-    .notification {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%) translateY(-100px);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 50px;
-        z-index: 2000;
-        transition: transform 0.3s ease, opacity 0.3s ease;
-        opacity: 0;
-    }
-    
-    .notification.show {
-        transform: translateX(-50%) translateY(0);
-        opacity: 1;
-    }
-    
-    .confetti-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 1500;
-        overflow: hidden;
-    }
-    
-    .confetti {
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        background: #4a90e2;
-        opacity: 0.8;
-        animation: confettiFall 3s linear forwards;
-    }
-`;
-document.head.appendChild(style);
+  }
+  window.addEventListener('DOMContentLoaded', startup);
+})();
+
